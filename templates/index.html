@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Daily Internships</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background:#f7f7f7; }
+        .job { background: #fff; margin: 10px 0; padding: 15px; border-radius: 8px; }
+        .title { font-weight: bold; font-size: 1.2em; }
+        .source { color: gray; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>🔥 Top Internships for You</h1>
+    {% for job in jobs %}
+    <div class="job">
+        <div class="title"><a href="{{ job.link }}" target="_blank">{{ job.title }}</a></div>
+        <div class="source">{{ job.source }} — Score: {{ job.score }}</div>
+    </div>
+    {% endfor %}
+</body>
+</html>
