@@ -1,21 +1,137 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Daily Internships</title>
+    <title>Daily Internship Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: Arial; padding: 20px; background:#f7f7f7; }
-        .job { background: #fff; margin: 10px 0; padding: 15px; border-radius: 8px; }
-        .title { font-weight: bold; font-size: 1.2em; }
-        .source { color: gray; font-size: 0.9em; }
+        .tag {
+            cursor: pointer;
+            padding: 12px 20px;
+            border-radius: 9999px;
+            border: 2px solid #ccc;
+            margin: 5px;
+            display: inline-block;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .tag:hover { transform: translateY(-2px); border-color: #3b82f6; }
+        .tag.selected { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+        .select-all-btn {
+            background-color: #e0e7ff;
+            padding: 8px 14px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .select-all-btn:hover { background-color: #c7d2fe; }
     </style>
 </head>
-<body>
-    <h1>🔥 Top Internships for You</h1>
+<body class="bg-gray-100 p-10">
+    <!-- Add this at the top inside <body> -->
+<header class="mb-8 flex justify-between items-center bg-blue-600 p-4 rounded-xl text-white">
+    <h1 class="text-2xl font-bold">🔥 Daily Internship Finder</h1>
+    <a href="/all_jobs" class="hover:underline font-semibold">📄 All Jobs</a>
+</header>
+<div class="max-w-5xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+    <h1 class="text-4xl font-bold mb-8 text-center text-blue-700">Daily Internship Finder</h1>
+
+    <form id="jobForm" method="post" action="/generate_email" class="space-y-6">
+
+        <!-- Recipient Email -->
+        <div>
+            <label class="block font-semibold mb-2 text-lg">Send To Email:</label>
+            <input type="email" name="recipient_email" required
+                   class="w-full border rounded p-3 text-lg"
+                   value="{{ recipient_email if recipient_email else jobs.EMAIL }}">
+        </div>
+
+        <!-- Job Titles -->
+        <div>
+            <label class="block font-semibold mb-2 text-lg">Job Titles:</label>
+            <button type="button" class="select-all-btn" onclick="toggleAll('titlesContainer', 'titlesInput')">Select All / Deselect All</button>
+            <div id="titlesContainer">
+                {% for jt in job_titles %}
+                <span class="tag {% if jt in selected_job_titles %}selected{% endif %}" data-value="{{ jt }}">{{ jt }}</span>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="job_titles" id="titlesInput" value="{{ selected_job_titles | join(',') }}">
+        </div>
+
+        <!-- Skills -->
+        <div>
+            <label class="block font-semibold mb-2 text-lg">Skills:</label>
+            <button type="button" class="select-all-btn" onclick="toggleAll('skillsContainer', 'skillsInput')">Select All / Deselect All</button>
+            <div id="skillsContainer">
+                {% for s in skills %}
+                <span class="tag {% if s in selected_skills %}selected{% endif %}" data-value="{{ s }}">{{ s }}</span>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="skills" id="skillsInput" value="{{ selected_skills | join(',') }}">
+        </div>
+
+        <!-- Exclude Keywords -->
+        <div>
+            <label class="block font-semibold mb-2 text-lg">Exclude Keywords:</label>
+            <button type="button" class="select-all-btn" onclick="toggleAll('excludeContainer', 'excludeInput')">Select All / Deselect All</button>
+            <div id="excludeContainer">
+                {% for e in exclude %}
+                <span class="tag {% if e in selected_exclude %}selected{% endif %}" data-value="{{ e }}">{{ e }}</span>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="exclude" id="excludeInput" value="{{ selected_exclude | join(',') }}">
+        </div>
+
+        <div class="text-center">
+            <button type="submit" class="bg-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-700 transition-transform transform hover:-translate-y-1">Generate Email</button>
+        </div>
+    </form>
+
+    {% if email_status %}
+    <p class="mt-4 font-semibold text-center text-green-600 text-lg">{{ email_status }}</p>
+    {% endif %}
+
+    <h2 class="text-3xl font-bold mt-10 mb-4">Job Results:</h2>
     {% for job in jobs %}
-    <div class="job">
-        <div class="title"><a href="{{ job.link }}" target="_blank">{{ job.title }}</a></div>
-        <div class="source">{{ job.source }} — Score: {{ job.score }}</div>
+    <div class="bg-gray-50 p-5 rounded mb-3 shadow hover:shadow-lg transition-shadow">
+        <div class="font-semibold text-xl"><a href="{{ job.link }}" target="_blank" class="text-blue-600 hover:underline">{{ job.title }}</a></div>
+        <div class="text-gray-500 mt-1">{{ job.source }} — Score: {{ job.score }}</div>
     </div>
     {% endfor %}
+</div>
+
+<script>
+    function setupTagSelection(containerId, inputId) {
+        const container = document.getElementById(containerId);
+        const input = document.getElementById(inputId);
+        container.querySelectorAll('.tag').forEach(tag => {
+            tag.addEventListener('click', () => {
+                tag.classList.toggle('selected');
+                updateInput();
+            });
+        });
+        function updateInput() {
+            const selected = Array.from(container.querySelectorAll('.tag.selected')).map(t => t.dataset.value);
+            input.value = selected.join(',');
+        }
+    }
+
+    function toggleAll(containerId, inputId) {
+        const container = document.getElementById(containerId);
+        const tags = container.querySelectorAll('.tag');
+        const allSelected = Array.from(tags).every(t => t.classList.contains('selected'));
+        tags.forEach(tag => tag.classList.toggle('selected', !allSelected));
+        const input = document.getElementById(inputId);
+        const selected = Array.from(container.querySelectorAll('.tag.selected')).map(t => t.dataset.value);
+        input.value = selected.join(',');
+    }
+
+    setupTagSelection('titlesContainer', 'titlesInput');
+    setupTagSelection('skillsContainer', 'skillsInput');
+    setupTagSelection('excludeContainer', 'excludeInput');
+</script>
 </body>
 </html>

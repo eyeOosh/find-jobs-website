@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Saved Jobs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-10">
+    <header class="mb-8 flex justify-between items-center bg-blue-600 p-4 rounded-xl text-white">
+    <h1 class="text-2xl font-bold">📄 All Saved Jobs</h1>
+    <a href="/" class="hover:underline font-semibold">🏠 Main Page</a>
+</header>
+<div class="max-w-5xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+    <h1 class="text-4xl font-bold mb-4 text-center text-blue-700">📄 All Saved Jobs</h1>
+
+    <div class="text-center mb-6">
+        <button id="refreshBtn" class="bg-blue-600 text-white px-6 py-3 rounded-full font-semibold hover:bg-blue-700 transition-transform transform hover:-translate-y-1">🔄 Refresh Jobs</button>
+    </div>
+
+    <div id="jobsContainer">
+        {% if jobs %}
+            {% for job in jobs %}
+            <div class="bg-gray-50 p-5 rounded mb-3 shadow hover:shadow-lg transition-shadow">
+                <div class="font-semibold text-xl">
+                    <a href="{{ job.link }}" target="_blank" class="text-blue-600 hover:underline">{{ job.title }}</a>
+                </div>
+                <div class="text-gray-500 mt-1">{{ job.source }} — Score: {{ job.score }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-center text-gray-500 text-lg">No jobs found in senn_jobs.json.</p>
+        {% endif %}
+    </div>
+
+    <div class="mt-6 text-center">
+        <a href="/" class="text-blue-700 font-semibold hover:underline">← Back to Main Page</a>
+    </div>
+</div>
+
+<script>
+async function loadJobs() {
+    try {
+        const res = await fetch('/all_jobs_data');
+        const jobs = await res.json();
+        const container = document.getElementById('jobsContainer');
+        if (jobs.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 text-lg">No jobs found in senn_jobs.json.</p>';
+            return;
+        }
+        container.innerHTML = '';
+        jobs.forEach(job => {
+            const div = document.createElement('div');
+            div.className = 'bg-gray-50 p-5 rounded mb-3 shadow hover:shadow-lg transition-shadow';
+            div.innerHTML = `<div class="font-semibold text-xl"><a href="${job.link}" target="_blank" class="text-blue-600 hover:underline">${job.title}</a></div>
+                             <div class="text-gray-500 mt-1">${job.source} — Score: ${job.score}</div>`;
+            container.appendChild(div);
+        });
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+document.getElementById('refreshBtn').addEventListener('click', loadJobs);
+</script>
+</body>
+</html>
